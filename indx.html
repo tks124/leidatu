@@ -1,0 +1,2537 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>雷达图 · 手机版</title>
+<style>
+  :root{
+    --bg:#0a0e1a;
+    --bg2:#0d1424;
+    --bg3:#131d33;
+    --bg4:#0a1120;
+    --bg5:#16223c;
+    --line:#1e2b45;
+    --line2:#2b3d5e;
+    --tx:#e2e8f0;
+    --tx2:#f1f5f9;
+    --tx3:#cbd5e1;
+    --mut:#64748b;
+    --mut2:#94a3b8;
+    --acc:#38bdf8;
+    --mask:rgba(10,14,26,0.97);
+    --shadow:rgba(0,0,0,0.5);
+  }
+  body.light{
+    --bg:#eef2f7;
+    --bg2:#ffffff;
+    --bg3:#f1f5f9;
+    --bg4:#ffffff;
+    --bg5:#e2e8f0;
+    --line:#cbd5e1;
+    --line2:#cbd5e1;
+    --tx:#1e293b;
+    --tx2:#0f172a;
+    --tx3:#334155;
+    --mut:#64748b;
+    --mut2:#475569;
+    --acc:#0284c7;
+    --mask:rgba(238,242,247,0.97);
+    --shadow:rgba(15,23,42,0.16);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    background: var(--bg);
+    color: var(--tx);
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", "Helvetica Neue", sans-serif;
+    min-height: 100%;
+    -webkit-text-size-adjust: 100%;
+  }
+  #app { max-width: 560px; margin: 0 auto; padding: 14px 14px 250px; }
+
+  #titleInput {
+    width: 100%;
+    background: var(--bg3);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    color: var(--tx2);
+    font-size: 17px;
+    font-weight: 700;
+    padding: 14px 16px;
+    outline: none;
+    font-family: inherit;
+    margin-bottom: 14px;
+    transition: border-color .15s, background .15s, color .15s;
+  }
+  #titleInput:focus { border-color: var(--acc); background: var(--bg5); }
+
+  #cvWrap {
+    width: 100%;
+    border-radius: 16px;
+    overflow: hidden;
+    background: #0d1424;
+    margin-bottom: 14px;
+    box-shadow: 0 12px 36px rgba(0,0,0,0.5);
+    line-height: 0;
+  }
+  #cv { display: block; width: 100%; height: auto; }
+
+  .attr-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--bg2);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 10px 12px;
+    margin-bottom: 10px;
+  }
+  .attr-row .dot { width: 14px; height: 14px; border-radius: 50%; flex: none; }
+  .attr-row .name {
+    flex: 1; min-width: 0;
+    background: var(--bg4);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    color: var(--tx);
+    font-size: 15px;
+    padding: 10px 12px;
+    outline: none;
+    font-family: inherit;
+    transition: border-color .15s, background .15s;
+  }
+  .attr-row .val {
+    width: 76px; flex: none;
+    background: var(--bg4);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    color: var(--acc);
+    font-size: 16px;
+    font-weight: 700;
+    padding: 10px 8px;
+    outline: none;
+    text-align: center;
+    font-family: inherit;
+    -moz-appearance: textfield;
+    transition: border-color .15s, background .15s;
+  }
+  .attr-row .val::-webkit-outer-spin-button,
+  .attr-row .val::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  .attr-row .name:focus,
+  .attr-row .val:focus { border-color: var(--acc); background: var(--bg5); }
+
+  .panel {
+    background: var(--bg2);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 12px;
+    margin-bottom: 10px;
+  }
+  .panel-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+  .panel-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--tx3);
+    letter-spacing: 0.3px;
+    flex: none;
+  }
+
+  .chip-scroll {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding: 2px 0 4px;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .chip-scroll::-webkit-scrollbar { display: none; }
+  .chip {
+    flex: none;
+    padding: 9px 15px;
+    border-radius: 10px;
+    border: 1.5px solid var(--line);
+    background: var(--bg4);
+    color: var(--mut2);
+    font-size: 14px;
+    font-weight: 800;
+    letter-spacing: 0.6px;
+    cursor: pointer;
+    font-family: inherit;
+    transition: transform .12s, background .15s, color .15s, border-color .15s, box-shadow .15s;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+  .chip:active { transform: scale(0.94); }
+
+  .seg {
+    display: flex;
+    background: var(--bg4);
+    border: 1px solid var(--line);
+    border-radius: 9px;
+    padding: 3px;
+    gap: 3px;
+    flex: none;
+  }
+  .seg button {
+    border: 0;
+    background: transparent;
+    color: var(--mut2);
+    font-size: 12px;
+    font-weight: 600;
+    padding: 6px 12px;
+    border-radius: 7px;
+    cursor: pointer;
+    font-family: inherit;
+    transition: .15s;
+    white-space: nowrap;
+  }
+  .seg button.active {
+    background: linear-gradient(135deg, #0ea5e9, #6366f1);
+    color: #fff;
+  }
+
+  .score-row { display: flex; align-items: center; gap: 8px; }
+  #scoreInput {
+    flex: 1;
+    min-width: 0;
+    background: var(--bg4);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    color: var(--acc);
+    font-size: 26px;
+    font-weight: 800;
+    padding: 10px 14px;
+    outline: none;
+    font-family: inherit;
+    text-align: center;
+    -moz-appearance: textfield;
+    transition: border-color .15s, background .15s;
+  }
+  #scoreInput::-webkit-outer-spin-button,
+  #scoreInput::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  #scoreInput:focus { border-color: var(--acc); background: var(--bg5); }
+  #scoreInput.ro { color: #7dd3fc; border-style: dashed; }
+  body.light #scoreInput.ro { color: #0284c7; }
+  .score-unit { font-size: 15px; color: var(--mut); font-weight: 700; flex: none; }
+  .hint { margin-top: 8px; font-size: 12px; color: var(--mut); }
+
+  #actions {
+    position: fixed;
+    left: 0; right: 0; bottom: 0;
+    padding: 10px 12px calc(10px + env(safe-area-inset-bottom, 0px));
+    background: var(--mask);
+    -webkit-backdrop-filter: blur(14px);
+    backdrop-filter: blur(14px);
+    border-top: 1px solid var(--line);
+    z-index: 100;
+  }
+  #actions .row { display: flex; gap: 8px; }
+  #actions .row + .row { margin-top: 8px; }
+  #actions .row > * {
+    flex: 1 1 0;
+    min-width: 0;
+    padding: 12px 4px;
+    border-radius: 11px;
+    border: 1px solid var(--line);
+    background: var(--bg3);
+    color: var(--tx);
+    font-size: 12.5px;
+    font-weight: 600;
+    text-align: center;
+    cursor: pointer;
+    font-family: inherit;
+    white-space: nowrap;
+    user-select: none;
+    -webkit-user-select: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: .12s;
+  }
+  #actions .row > *:active { background: var(--bg5); transform: scale(0.96); }
+  #actions .row > .primary {
+    background: linear-gradient(135deg, #0ea5e9, #6366f1);
+    border-color: transparent;
+    color: #fff;
+  }
+  #actions .row > .active {
+    background: linear-gradient(135deg, #0ea5e9, #6366f1);
+    border-color: transparent;
+    color: #fff;
+    box-shadow: 0 4px 14px rgba(14,165,233,0.35);
+  }
+  #actions input[type=file] { display: none; }
+  #actions button:disabled { opacity: 0.5; }
+
+  #durRow {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 8px;
+  }
+  .dur-chk {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    padding: 12px 8px;
+    border-radius: 11px;
+    border: 1px solid var(--line);
+    background: var(--bg3);
+    color: var(--mut2);
+    font-size: 12.5px;
+    font-weight: 600;
+    cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
+    transition: background .15s, color .15s, border-color .15s, box-shadow .15s;
+  }
+  .dur-chk:active { transform: scale(0.97); }
+  .dur-chk.on {
+    color: var(--tx);
+    border-color: var(--acc);
+    background: var(--bg5);
+    box-shadow: inset 0 0 0 1px rgba(56,189,248,0.25);
+  }
+  .dur-chk input[type=checkbox] {
+    width: 16px; height: 16px;
+    flex: none;
+    margin: 0;
+    accent-color: #0ea5e9;
+  }
+  .dur-input {
+    width: 70px; flex: none;
+    background: var(--bg4);
+    border: 1px solid var(--line);
+    border-radius: 11px;
+    color: var(--acc);
+    font-size: 15px;
+    font-weight: 700;
+    padding: 12px 6px;
+    text-align: center;
+    outline: none;
+    font-family: inherit;
+    -moz-appearance: textfield;
+    transition: border-color .15s, background .15s, opacity .15s;
+  }
+  .dur-input::-webkit-outer-spin-button,
+  .dur-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  .dur-input:focus { border-color: var(--acc); background: var(--bg5); }
+  .dur-input:disabled { opacity: 0.35; }
+  .dur-unit {
+    flex: none;
+    font-size: 12.5px;
+    font-weight: 700;
+    color: var(--mut);
+  }
+
+  .toast {
+    position: fixed;
+    left: 50%; bottom: 230px;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--bg3);
+    border: 1px solid var(--line2);
+    color: var(--tx);
+    padding: 10px 18px;
+    border-radius: 10px;
+    font-size: 13px;
+    opacity: 0;
+    pointer-events: none;
+    transition: .25s;
+    z-index: 900;
+    white-space: nowrap;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  .site-bar {
+    position: fixed;
+    left: 50%;
+    bottom: 220px;
+    transform: translateX(-50%) translateY(24px);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: #000;
+    color: #fff;
+    padding: 11px 16px;
+    border-radius: 12px;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    z-index: 950;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .3s, transform .3s;
+    box-shadow: 0 10px 30px rgba(0,0,0,.55);
+    white-space: nowrap;
+    max-width: calc(100vw - 32px);
+  }
+  .site-bar.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+    pointer-events: auto;
+  }
+  .site-bar .site-text {
+    color: #fff;
+    font-family: inherit;
+    user-select: text;
+    -webkit-user-select: text;
+  }
+  .site-bar .site-close {
+    background: transparent;
+    border: 0;
+    color: #fff;
+    font-size: 17px;
+    line-height: 1;
+    cursor: pointer;
+    padding: 0 0 0 2px;
+    font-family: inherit;
+    opacity: 0.75;
+  }
+  .site-bar .site-close:active { opacity: 1; }
+
+  .modal-mask{
+    position:fixed; top:0; right:0; bottom:0; left:0;
+    background:rgba(0,0,0,.62);
+    display:flex; align-items:center; justify-content:center;
+    padding:24px; z-index:800;
+    opacity:0; pointer-events:none; transition:opacity .2s;
+  }
+  .modal-mask.show{ opacity:1; pointer-events:auto; }
+  .modal{
+    width:100%; max-width:340px;
+    background:var(--bg2); border:1px solid var(--line);
+    border-radius:16px; padding:18px;
+    box-shadow:0 20px 50px var(--shadow);
+    transform:translateY(10px) scale(.97); transition:transform .22s;
+  }
+  .modal-mask.show .modal{ transform:none; }
+  .modal-title{ font-size:17px; font-weight:800; color:var(--tx2); margin-bottom:10px; }
+  .modal-body{ font-size:14px; line-height:1.7; color:var(--tx3); }
+  .modal-foot{ display:flex; justify-content:flex-end; gap:10px; margin-top:18px; }
+  .modal-foot button{
+    min-width:74px; padding:10px 16px; border-radius:10px; border:1px solid var(--line);
+    background:var(--bg3); color:var(--tx); font-size:14px; font-weight:700;
+    font-family:inherit; cursor:pointer; transition:.15s;
+  }
+  .modal-foot button:active{ transform:scale(.96); }
+  .modal-foot .btn-primary{ background:linear-gradient(135deg,#0ea5e9,#6366f1); border-color:transparent; color:#fff; }
+
+  #pwdInput{
+    width:100%; margin-top:12px;
+    padding:12px 14px; border-radius:10px;
+    border:1px solid var(--line); background:var(--bg4);
+    color:var(--acc); font-size:16px; font-weight:700;
+    font-family:inherit; outline:none; letter-spacing:2px;
+  }
+  #pwdInput:focus{ border-color:var(--acc); background:var(--bg5); }
+  .pwd-err{ margin-top:8px; font-size:12.5px; color:#f87171; min-height:16px; }
+
+  #drawerTab{
+    position:fixed; left:0; top:50%; transform:translateY(-50%);
+    width:22px; height:56px; z-index:290;
+    border:1px solid var(--line); border-left:0;
+    border-radius:0 12px 12px 0;
+    background:var(--bg3); color:var(--mut2);
+    font-size:13px; font-family:inherit; cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+    padding:0; transition:.15s;
+  }
+  #drawerTab:active{ background:var(--bg5); }
+
+  #drawerMask{
+    position:fixed; top:0; right:0; bottom:0; left:0;
+    background:rgba(0,0,0,.55);
+    opacity:0; pointer-events:none; transition:opacity .28s; z-index:299;
+  }
+  #drawerMask.show{ opacity:1; pointer-events:auto; }
+
+  #drawer{
+    position:fixed; top:0; left:0; bottom:0;
+    width:78%; max-width:330px;
+    background:var(--bg2);
+    border-right:1px solid var(--line);
+    transform:translateX(-105%);
+    transition:transform .28s cubic-bezier(.4,0,.2,1);
+    z-index:300; display:flex; flex-direction:column;
+    box-shadow:8px 0 40px rgba(0,0,0,.45);
+  }
+  #drawer.open{ transform:translateX(0); }
+  .drawer-sec{ flex:1 1 0; min-height:0; position:relative; }
+  .drawer-top{
+    background-image:url('dt.png');
+    background-size:cover;
+    background-position:center;
+    background-repeat:no-repeat;
+    display:flex; align-items:flex-start; justify-content:flex-start;
+    padding:16px;
+    background-color:#101a2e;
+  }
+  .drawer-top::after{
+    content:''; position:absolute; top:0; right:0; bottom:0; left:0;
+    background:linear-gradient(180deg, rgba(6,10,22,.35) 0%, rgba(6,10,22,.82) 100%);
+    pointer-events:none;
+  }
+  .drawer-ver{
+    position:relative; z-index:1;
+    font-size:15px; font-weight:800; letter-spacing:.6px;
+    color:#fff; text-shadow:0 2px 10px rgba(0,0,0,.85);
+    background:rgba(0,0,0,.28);
+    padding:5px 11px; border-radius:9px;
+    border:1px solid rgba(255,255,255,.18);
+  }
+  .drawer-mid{
+    display:flex; align-items:center; justify-content:center;
+    color:var(--mut); font-size:12px; letter-spacing:1px;
+    border-top:1px solid var(--line); border-bottom:1px solid var(--line);
+  }
+  .drawer-bottom{
+    display:flex; flex-direction:column; gap:10px;
+    padding:16px; justify-content:flex-end;
+  }
+  .drawer-btn{
+    width:100%; padding:14px 16px; border-radius:12px;
+    border:1px solid var(--line); background:var(--bg3);
+    color:var(--tx); font-size:14.5px; font-weight:700;
+    font-family:inherit; cursor:pointer;
+    display:flex; align-items:center; justify-content:space-between;
+    transition:.15s;
+  }
+  .drawer-btn:active{ transform:scale(.97); background:var(--bg5); }
+  .sw{
+    width:44px; height:24px; border-radius:12px;
+    background:var(--bg4); border:1px solid var(--line);
+    position:relative; flex:none; transition:.2s;
+  }
+  .sw::after{
+    content:''; position:absolute; top:2px; left:2px;
+    width:18px; height:18px; border-radius:50%;
+    background:var(--mut); transition:.2s;
+  }
+  .sw.on{ background:linear-gradient(135deg,#0ea5e9,#6366f1); border-color:transparent; }
+  .sw.on::after{ left:22px; background:#fff; }
+
+  #settingsPage{
+    position:fixed; top:0; right:0; bottom:0; left:0; z-index:400;
+    background:var(--bg); overflow-y:auto;
+    opacity:0; visibility:hidden; pointer-events:none;
+    transition:opacity .25s, visibility .25s;
+    display:flex; flex-direction:column;
+  }
+  #settingsPage.open{
+    opacity:1; visibility:visible; pointer-events:auto;
+  }
+  .page-head{
+    display:flex; align-items:center; gap:10px;
+    padding:14px 16px;
+    padding-top:calc(14px + env(safe-area-inset-top, 0px));
+    border-bottom:1px solid var(--line);
+    font-size:17px; font-weight:800; color:var(--tx2);
+    position:sticky; top:0; background:var(--bg); z-index:2;
+  }
+  .back-btn{
+    width:34px; height:34px; border-radius:10px;
+    border:1px solid var(--line); background:var(--bg3);
+    color:var(--tx); font-size:19px; line-height:1;
+    display:flex; align-items:center; justify-content:center;
+    cursor:pointer; font-family:inherit; padding-bottom:3px;
+  }
+  .page-body{ padding:16px; max-width:560px; width:100%; margin:0 auto; }
+  .set-item{ margin-bottom:18px; }
+  .set-label{
+    font-size:13px; color:var(--mut2); font-weight:600;
+    margin-bottom:8px; display:flex; align-items:center;
+    justify-content:space-between; gap:8px;
+  }
+  .set-label .vtag{ color:var(--acc); font-weight:800; }
+  .set-btn{
+    width:100%; padding:14px 16px; border-radius:12px;
+    border:1px solid var(--line); background:var(--bg2);
+    color:var(--tx); font-size:15px; font-weight:700;
+    font-family:inherit; cursor:pointer; text-align:left;
+    transition:.15s;
+  }
+  .set-btn:active{ transform:scale(.98); background:var(--bg5); }
+  .set-btn.danger{ color:#f87171; border-color:rgba(248,113,113,.35); }
+  .set-btn.danger.on{ background:rgba(248,113,113,.12); }
+  .set-btn:disabled{ opacity:.6; }
+  .set-seg{
+    display:flex; background:var(--bg4); border:1px solid var(--line);
+    border-radius:11px; padding:4px; gap:4px;
+  }
+  .set-seg button{
+    flex:1; border:0; background:transparent; color:var(--mut2);
+    font-size:13px; font-weight:700; padding:10px 4px;
+    border-radius:8px; cursor:pointer; font-family:inherit;
+    transition:.15s;
+  }
+  .set-seg button.active{
+    background:linear-gradient(135deg,#0ea5e9,#6366f1); color:#fff;
+  }
+
+  #devMask{
+    position:fixed; top:0; right:0; bottom:0; left:0; z-index:600;
+    background:#0d1424; display:none;
+  }
+  #devMask.show{ display:block; }
+  #devRoot{ position:absolute; top:0; right:0; bottom:0; left:0; }
+</style>
+</head>
+<body>
+
+<div id="app">
+  <input id="titleInput" type="text" maxlength="16" placeholder="输入标题">
+  <div id="cvWrap"><canvas id="cv"></canvas></div>
+  <div id="attrs"></div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <span class="panel-title">评级</span>
+    </div>
+    <div class="chip-scroll" id="ratingRow"></div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <span class="panel-title">综合评分</span>
+      <div class="seg" id="scoreMode">
+        <button type="button" data-mode="auto" class="active">按属性计算</button>
+        <button type="button" data-mode="manual">手动填写</button>
+      </div>
+    </div>
+    <div class="score-row">
+      <input id="scoreInput" type="number" min="0" max="10" step="0.1" inputmode="decimal" value="7.4">
+      <span class="score-unit">/ 10</span>
+    </div>
+    <div class="hint" id="scoreHint">按所有属性平均值自动计算</div>
+  </div>
+</div>
+
+<div id="actions">
+  <div class="row" id="countRow">
+    <button type="button" data-count="5">5属性</button>
+    <button type="button" data-count="8">8属性</button>
+    <button type="button" data-count="12">12属性</button>
+    <button type="button" data-count="custom">自定义</button>
+  </div>
+  <div class="row">
+    <label>背景图<input type="file" id="bgFile" accept="image/*"></label>
+    <label>右边图<input type="file" id="imgFile" accept="image/*"></label>
+    <button class="primary" id="exportImg">导出图片</button>
+    <button class="primary" id="exportVid">导出视频</button>
+    <button id="previewBtn">预览</button>
+  </div>
+  <div id="durRow">
+    <label class="dur-chk" id="durChk">
+      <input type="checkbox" id="durEnable">
+      <span>自定义动画时长</span>
+    </label>
+    <input class="dur-input" id="durInput" type="number" inputmode="decimal"
+           min="0.2" max="60" step="0.1" value="1" disabled>
+    <span class="dur-unit">秒</span>
+  </div>
+</div>
+
+<button id="drawerTab">☰</button>
+<div id="drawerMask"></div>
+
+<aside id="drawer">
+  <div class="drawer-sec drawer-top">
+    <div class="drawer-ver" id="drawerVer">v1.0.0</div>
+  </div>
+  <div class="drawer-sec drawer-mid">
+    <span>雷达图制作工具</span>
+  </div>
+  <div class="drawer-sec drawer-bottom">
+    <button class="drawer-btn" id="nightBtn">
+      <span>夜间模式</span>
+      <span class="sw on" id="nightSw"></span>
+    </button>
+    <button class="drawer-btn" id="settingsBtn">
+      <span>设置</span>
+      <span style="color:var(--mut2);font-size:18px;">›</span>
+    </button>
+  </div>
+</aside>
+
+<div id="settingsPage">
+  <div class="page-head">
+    <button class="back-btn" id="settingsBack">‹</button>
+    <span>设置</span>
+  </div>
+  <div class="page-body">
+    <div class="set-item">
+      <div class="set-label">
+        <span>当前版本</span>
+        <span class="vtag" id="setVer">1.0.0</span>
+      </div>
+      <button class="set-btn" id="checkUpdate">检查更新</button>
+    </div>
+
+    <div class="set-item">
+      <div class="set-label"><span>图片导出格式</span></div>
+      <div class="set-seg" id="imgFmtSeg">
+        <button data-v="png" class="active">PNG</button>
+        <button data-v="jpeg">JPG</button>
+        <button data-v="webp">WEBP</button>
+      </div>
+    </div>
+
+    <div class="set-item">
+      <div class="set-label"><span>视频导出格式</span></div>
+      <div class="set-seg" id="vidFmtSeg">
+        <button data-v="webm" class="active">WEBM</button>
+        <button data-v="mp4">MP4</button>
+      </div>
+    </div>
+
+    <div class="set-item">
+      <div class="set-label"><span>高级功能</span></div>
+      <button class="set-btn danger" id="devBtn">开发者模式</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-mask" id="announceMask">
+  <div class="modal">
+    <div class="modal-title">提醒</div>
+    <div class="modal-body">本网页为专门制作雷达图的相关工具，您所设置的所有内容不会上传</div>
+    <div class="modal-foot">
+      <button class="btn-primary" id="announceOk">OK</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-mask" id="pwdMask">
+  <div class="modal">
+    <div class="modal-title">开发者验证</div>
+    <div class="modal-body">
+      <div style="font-size:13px;color:var(--mut2);">请输入开发者密码</div>
+      <input type="password" id="pwdInput" placeholder="密码" autocomplete="off">
+      <div class="pwd-err" id="pwdErr"></div>
+    </div>
+    <div class="modal-foot">
+      <button id="pwdCancel">取消</button>
+      <button class="btn-primary" id="pwdOk">确定</button>
+    </div>
+  </div>
+</div>
+
+<div id="devMask"><div id="devRoot"></div></div>
+
+<div class="site-bar" id="siteBar">
+  <span class="site-text">官网：www.spacekill124.cn</span>
+  <button type="button" class="site-close" id="siteBarClose">×</button>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+'use strict';
+
+var APP_VERSION = '1.0.0';
+var ANNOUNCE_KEY = 'radarAnnounceVer';
+var NIGHT_KEY = 'radarNightMode';
+var GITHUB_API = 'https://api.github.com/repos/tks124/leidatu/releases/latest';
+
+var LOGIC_W = 800;
+var LOGIC_H = 1100;
+var FONT = '-apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif';
+
+var MIN_COUNT = 3;
+var MAX_COUNT = 20;
+
+var DEFAULT_ANIM_MS = 3200;
+var MIN_DUR_SEC = 0.2;
+var MAX_DUR_SEC = 60;
+
+var PALETTE = [
+  '#ff6b81', '#ffc542', '#4ade80', '#38bdf8', '#a78bfa',
+  '#f472b6', '#fb923c', '#2dd4bf', '#818cf8', '#a3e635',
+  '#22d3ee', '#e879f9', '#f59e0b', '#34d399', '#60a5fa',
+  '#c084fc', '#f87171', '#facc15', '#4ade80', '#93c5fd'
+];
+
+var NAME_POOL = [
+  '攻击', '防御', '速度', '智力', '体力',
+  '敏捷', '力量', '魔法', '幸运', '精神',
+  '命中', '闪避', '暴击', '韧性', '生命',
+  '护甲', '魔抗', '格挡', '吸血', '连击'
+];
+
+var DEFAULT_VALUES = [82, 64, 91, 73, 58, 70, 66, 85, 77, 60, 88, 72, 55, 80, 68, 90, 62, 75, 84, 66];
+
+var RATINGS = [
+  { key: 'SSS+', a: '#ff2fd0', b: '#ffd93d', rainbow: true },
+  { key: 'SSS',  a: '#fff1a8', b: '#ffb300' },
+  { key: 'SS+',  a: '#ffd166', b: '#ff9f1c' },
+  { key: 'SS',   a: '#ffb703', b: '#fb8500' },
+  { key: 'S+',   a: '#ff9f1c', b: '#ff6b35' },
+  { key: 'S',    a: '#ff8a5b', b: '#e63946' },
+  { key: 'A+',   a: '#ff4d6d', b: '#d90429' },
+  { key: 'A',    a: '#f72585', b: '#b5179e' },
+  { key: 'B+',   a: '#c77dff', b: '#9d4edd' },
+  { key: 'B',    a: '#a06cd5', b: '#6a4c93' },
+  { key: 'C+',   a: '#8da9ff', b: '#4361ee' },
+  { key: 'C',    a: '#4cc9f0', b: '#2980b9' },
+  { key: 'D+',   a: '#48dbfb', b: '#0abde3' },
+  { key: 'D',    a: '#1dd1a1', b: '#10ac84' },
+  { key: 'F+',   a: '#95a5b8', b: '#64748b' },
+  { key: 'F',    a: '#7b8794', b: '#475569' }
+];
+
+var RAINBOW_CSS = 'linear-gradient(135deg,#ff3b6b,#ff9f1c,#ffe066,#4ade80,#38bdf8,#a78bfa)';
+
+var LETTERS = [
+  ['a', '属性数量'],
+  ['b', '属性最大值（单项最高）'],
+  ['c', '属性最小值（单项最低）'],
+  ['d', '属性平均值'],
+  ['e', '属性满值（上限）'],
+  ['f', '归一化平均值（0~1）'],
+  ['g', '属性标准差'],
+  ['h', '属性中位数'],
+  ['i', '属性极差（最大值 - 最小值）'],
+  ['j', '属性总和平方根'],
+  ['k', '高于平均值的属性个数'],
+  ['l', '低于平均值的属性个数'],
+  ['m', '综合评分满分（10）'],
+  ['n', '属性值平方和'],
+  ['o', '达到满值的属性个数'],
+  ['p', '达标属性个数（≥ 满值 60%）'],
+  ['q', '当前评级序号（从 1 开始）'],
+  ['r', '评级总数'],
+  ['s', '最大单项占比（最大值 / 总和）'],
+  ['t', '最大单项归一值（最大值 / 满值）'],
+  ['u', '最小单项归一值（最小值 / 满值）'],
+  ['v', '归一化平均值百分制（f × 100）'],
+  ['w', '极差归一值（极差 / 满值）'],
+  ['x', '所有属性数值之和'],
+  ['y', '最终结果（公式输出）'],
+  ['z', '总和的归一化值（总和 / 满值）']
+];
+
+var FUNCS = {
+  sqrt: function(v){ return Math.sqrt(Math.max(0, v)); },
+  abs: function(v){ return Math.abs(v); },
+  min: function(){ return Math.min.apply(null, arguments); },
+  max: function(){ return Math.max.apply(null, arguments); },
+  round: function(v){ return Math.round(v); },
+  floor: function(v){ return Math.floor(v); },
+  ceil: function(v){ return Math.ceil(v); },
+  pow: function(a, b){ return Math.pow(a, b); },
+  sin: function(v){ return Math.sin(v); },
+  cos: function(v){ return Math.cos(v); }
+};
+
+var cv = document.getElementById('cv');
+var ctx = cv.getContext('2d');
+
+var state = {
+  title: '角色属性雷达图',
+  maxValue: 100,
+  attrs: [
+    { name: '攻击', value: 82, color: '#ff6b81' },
+    { name: '防御', value: 64, color: '#ffc542' },
+    { name: '速度', value: 91, color: '#4ade80' },
+    { name: '智力', value: 73, color: '#38bdf8' },
+    { name: '体力', value: 58, color: '#a78bfa' }
+  ],
+  bgImage: null,
+  rightImage: null,
+  rating: 'S',
+  scoreMode: 'auto',
+  manualScore: 7.4,
+  customDur: false,
+  duration: 1,
+  formula: 'f*m',
+  devMode: false,
+  unlimitedValues: false,
+  longNames: false,
+  imgFormat: 'png',
+  vidFormat: 'webm',
+  night: true
+};
+
+var animT = 1;
+var recording = false;
+var scoreRefresh = null;
+var devPassword = null;
+var devPasswordTried = false;
+
+function $(id){ return document.getElementById(id); }
+
+function rowHeightFor(n){
+  if (n <= 5)  return 82;
+  if (n <= 8)  return 76;
+  if (n <= 12) return 64;
+  return 50;
+}
+
+function updateLogicHeight(){
+  var n = state.attrs.length;
+  var rowH = rowHeightFor(n);
+  var bottom = 660 + (n - 1) * rowH + 36 + 60;
+  LOGIC_H = Math.max(1100, bottom);
+}
+
+function clamp01(v){ return v < 0 ? 0 : v > 1 ? 1 : v; }
+function easeOut(t){ return 1 - Math.pow(1 - t, 3); }
+
+function hex2rgba(hex, a){
+  var h = String(hex).replace('#', '');
+  if (h.length === 3) h = h[0] + h[0] + h[1] + h[1] + h[2] + h[2];
+  var n = parseInt(h, 16);
+  if (isNaN(n)) return 'rgba(255,255,255,' + a + ')';
+  return 'rgba(' + ((n >> 16) & 255) + ',' + ((n >> 8) & 255) + ',' + (n & 255) + ',' + a + ')';
+}
+
+function rr(x, y, w, h, r){
+  r = Math.min(r, w / 2, h / 2);
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+}
+
+function drawCover(img, x, y, w, h, scale, alpha){
+  scale = scale || 1;
+  alpha = alpha === undefined ? 1 : alpha;
+  if (!img) return;
+  var iw = img.naturalWidth || img.width;
+  var ih = img.naturalHeight || img.height;
+  if (!iw || !ih) return;
+  var s = Math.max(w / iw, h / ih) * scale;
+  var dw = iw * s, dh = ih * s;
+  var dx = x + (w - dw) / 2;
+  var dy = y + (h - dh) / 2;
+  ctx.globalAlpha = alpha;
+  ctx.drawImage(img, dx, dy, dw, dh);
+  ctx.globalAlpha = 1;
+}
+
+function toast(msg){
+  var el = $('toast');
+  if (!el) return;
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(el._t);
+  el._t = setTimeout(function(){ el.classList.remove('show'); }, 1800);
+}
+
+function animMs(){
+  if (!state.customDur) return DEFAULT_ANIM_MS;
+  var s = Number(state.duration);
+  if (isNaN(s) || s <= 0) s = 1;
+  s = Math.max(MIN_DUR_SEC, Math.min(MAX_DUR_SEC, s));
+  return Math.round(s * 1000);
+}
+
+function getRating(){
+  for (var i = 0; i < RATINGS.length; i++) {
+    if (RATINGS[i].key === state.rating) return RATINGS[i];
+  }
+  return RATINGS[0];
+}
+
+function formulaVars(){
+  var attrs = state.attrs;
+  var vals = attrs.map(function(a){ return Number(a.value) || 0; });
+  var n = vals.length || 1;
+  var sum = 0, maxV = 0, minV = 0, sqsum = 0;
+  var i;
+  for (i = 0; i < vals.length; i++) {
+    sum += vals[i];
+    sqsum += vals[i] * vals[i];
+    if (i === 0 || vals[i] > maxV) maxV = vals[i];
+    if (i === 0 || vals[i] < minV) minV = vals[i];
+  }
+  var avg = sum / n;
+  var full = Number(state.maxValue) || 100;
+  var norm = full ? avg / full : 0;
+  var vari = 0;
+  for (i = 0; i < vals.length; i++) vari += Math.pow(vals[i] - avg, 2);
+  var sd = Math.sqrt(vari / n);
+  var sorted = vals.slice().sort(function(a, b){ return a - b; });
+  var med = 0;
+  if (sorted.length) {
+    var mid = Math.floor(sorted.length / 2);
+    med = sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
+  }
+  var above = 0, below = 0, fullCount = 0, passCount = 0;
+  for (i = 0; i < vals.length; i++) {
+    if (vals[i] > avg) above++;
+    if (vals[i] < avg) below++;
+    if (vals[i] >= full) fullCount++;
+    if (vals[i] >= full * 0.6) passCount++;
+  }
+  var rIdx = 1;
+  for (i = 0; i < RATINGS.length; i++) {
+    if (RATINGS[i].key === state.rating) { rIdx = i + 1; break; }
+  }
+  var range = maxV - minV;
+  var vars = {
+    a: vals.length,
+    b: maxV,
+    c: minV,
+    d: avg,
+    e: full,
+    f: norm,
+    g: sd,
+    h: med,
+    i: range,
+    j: Math.sqrt(Math.abs(sum)),
+    k: above,
+    l: below,
+    m: 10,
+    n: sqsum,
+    o: fullCount,
+    p: passCount,
+    q: rIdx,
+    r: RATINGS.length,
+    s: sum !== 0 ? maxV / sum : 0,
+    t: full ? maxV / full : 0,
+    u: full ? minV / full : 0,
+    v: norm * 100,
+    w: full ? range / full : 0,
+    x: sum,
+    z: full ? sum / full : 0
+  };
+  vars.y = 0;
+  return vars;
+}
+
+function evalFormula(expr, vars){
+  if (expr === null || expr === undefined) return NaN;
+  var s = String(expr)
+    .replace(/[×✕╳＊]/g, '*')
+    .replace(/[÷／]/g, '/')
+    .replace(/[（]/g, '(')
+    .replace(/[）]/g, ')')
+    .replace(/[－—–]/g, '-')
+    .replace(/[＋]/g, '+')
+    .replace(/[，、]/g, ',')
+    .replace(/\s+/g, '');
+  if (!s) return NaN;
+  if (s.indexOf('=') >= 0) s = s.split('=')[0];
+  if (!s) return NaN;
+
+  var pos = 0;
+
+  function exprP(){
+    var v = termP();
+    while (pos < s.length) {
+      var c = s.charAt(pos);
+      if (c === '+' || c === '-') {
+        pos++;
+        var r = termP();
+        v = c === '+' ? v + r : v - r;
+      } else break;
+    }
+    return v;
+  }
+
+  function termP(){
+    var v = unaryP();
+    while (pos < s.length) {
+      var c = s.charAt(pos);
+      if (c === '*' || c === '/' || c === '%') {
+        pos++;
+        var r = unaryP();
+        if (c === '*') v = v * r;
+        else if (c === '/') v = r === 0 ? 0 : v / r;
+        else v = r === 0 ? 0 : v % r;
+      } else break;
+    }
+    return v;
+  }
+
+  function unaryP(){
+    var c = s.charAt(pos);
+    if (c === '-') { pos++; return -unaryP(); }
+    if (c === '+') { pos++; return unaryP(); }
+    return powP();
+  }
+
+  function powP(){
+    var v = atomP();
+    if (s.charAt(pos) === '^') {
+      pos++;
+      var r = unaryP();
+      return Math.pow(v, r);
+    }
+    return v;
+  }
+
+  function atomP(){
+    var c = s.charAt(pos);
+    if (c === '(') {
+      pos++;
+      var v = exprP();
+      if (s.charAt(pos) === ')') pos++;
+      return v;
+    }
+    var num = /^\d*\.?\d+/.exec(s.slice(pos));
+    if (num) { pos += num[0].length; return parseFloat(num[0]); }
+    var id = /^[a-zA-Z]+/.exec(s.slice(pos));
+    if (id) {
+      var name = id[0].toLowerCase();
+      pos += id[0].length;
+      if (s.charAt(pos) === '(' && FUNCS[name]) {
+        pos++;
+        var args = [];
+        if (s.charAt(pos) !== ')') {
+          for (;;) {
+            args.push(exprP());
+            if (s.charAt(pos) === ',') { pos++; continue; }
+            break;
+          }
+        }
+        if (s.charAt(pos) === ')') pos++;
+        return FUNCS[name].apply(null, args);
+      }
+      if (Object.prototype.hasOwnProperty.call(vars, name)) return vars[name];
+      return 0;
+    }
+    pos++;
+    return 0;
+  }
+
+  try {
+    var out = exprP();
+    if (!isFinite(out)) return NaN;
+    return out;
+  } catch (e) {
+    return NaN;
+  }
+}
+
+function autoScore(){
+  if (state.formula) {
+    var vars = formulaVars();
+    var r = evalFormula(state.formula, vars);
+    if (!isNaN(r)) return r;
+  }
+  var n = state.attrs.length;
+  if (!n) return 0;
+  var sum = 0;
+  for (var i = 0; i < n; i++) {
+    sum += clamp01(state.attrs[i].value / state.maxValue);
+  }
+  return (sum / n) * 10;
+}
+
+function currentScore(){
+  if (state.scoreMode === 'manual') {
+    var v = Number(state.manualScore);
+    if (isNaN(v)) v = 0;
+    if (state.devMode) return v;
+    return Math.max(0, Math.min(10, v));
+  }
+  return autoScore();
+}
+
+function scoreColor(v){
+  if (v >= 9.5) return ['#ff9f1c', '#ffe066'];
+  if (v >= 9.0) return ['#ffd93d', '#ffb300'];
+  if (v >= 8.0) return ['#4ade80', '#22d3ee'];
+  if (v >= 7.0) return ['#38bdf8', '#818cf8'];
+  if (v >= 6.0) return ['#a78bfa', '#e879f9'];
+  if (v >= 5.0) return ['#fb923c', '#f472b6'];
+  return ['#f87171', '#ef4444'];
+}
+
+function rainbowGradient(x0, x1){
+  var g = ctx.createLinearGradient(x0, 0, x1, 0);
+  g.addColorStop(0.00, '#ff3b6b');
+  g.addColorStop(0.18, '#ff9f1c');
+  g.addColorStop(0.36, '#ffe066');
+  g.addColorStop(0.54, '#4ade80');
+  g.addColorStop(0.72, '#38bdf8');
+  g.addColorStop(0.88, '#a78bfa');
+  g.addColorStop(1.00, '#ff3b6b');
+  return g;
+}
+
+function drawBackground(){
+  if (state.bgImage) {
+    drawCover(state.bgImage, 0, 0, LOGIC_W, LOGIC_H);
+    ctx.fillStyle = 'rgba(6,10,22,0.68)';
+    ctx.fillRect(0, 0, LOGIC_W, LOGIC_H);
+    return;
+  }
+  var g = ctx.createLinearGradient(0, 0, LOGIC_W, LOGIC_H);
+  g.addColorStop(0, '#0a1024');
+  g.addColorStop(0.55, '#0e1730');
+  g.addColorStop(1, '#131a38');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, LOGIC_W, LOGIC_H);
+
+  var rg = ctx.createRadialGradient(200, 350, 0, 200, 350, 400);
+  rg.addColorStop(0, 'rgba(56,189,248,0.18)');
+  rg.addColorStop(1, 'rgba(56,189,248,0)');
+  ctx.fillStyle = rg;
+  ctx.fillRect(0, 0, LOGIC_W, LOGIC_H);
+
+  rg = ctx.createRadialGradient(600, 350, 0, 600, 350, 400);
+  rg.addColorStop(0, 'rgba(139,92,246,0.16)');
+  rg.addColorStop(1, 'rgba(139,92,246,0)');
+  ctx.fillStyle = rg;
+  ctx.fillRect(0, 0, LOGIC_W, LOGIC_H);
+}
+
+function drawTitle(){
+  var title = state.title || '雷达图';
+  var size = 36;
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'middle';
+  ctx.font = '700 ' + size + 'px ' + FONT;
+  while (size > 20 && ctx.measureText(title).width > 330) {
+    size -= 2;
+    ctx.font = '700 ' + size + 'px ' + FONT;
+  }
+  ctx.fillStyle = '#f1f5f9';
+  ctx.fillText(title, 40, 70);
+  ctx.fillStyle = '#38bdf8';
+  rr(40, 96, 80, 5, 2.5);
+  ctx.fill();
+}
+
+function drawRadar(t){
+  var n = state.attrs.length;
+  if (!n) return;
+  var CX = 200, CY = 350, R = 150;
+  var e = easeOut(clamp01(t * 1.2));
+
+  function ang(i){ return -Math.PI / 2 + i * 2 * Math.PI / n; }
+
+  for (var ring = 1; ring <= 4; ring++) {
+    var r0 = R * ring / 4;
+    ctx.beginPath();
+    for (var i = 0; i < n; i++) {
+      var x = CX + Math.cos(ang(i)) * r0;
+      var y = CY + Math.sin(ang(i)) * r0;
+      i ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
+    }
+    ctx.closePath();
+    ctx.strokeStyle = ring === 4 ? 'rgba(125,211,252,0.5)' : 'rgba(125,211,252,0.14)';
+    ctx.lineWidth = ring === 4 ? 2 : 1.5;
+    ctx.stroke();
+  }
+
+  ctx.strokeStyle = 'rgba(125,211,252,0.2)';
+  ctx.lineWidth = 1.5;
+  for (var j = 0; j < n; j++) {
+    ctx.beginPath();
+    ctx.moveTo(CX, CY);
+    ctx.lineTo(CX + Math.cos(ang(j)) * R, CY + Math.sin(ang(j)) * R);
+    ctx.stroke();
+  }
+
+  var pts = state.attrs.map(function(a, k){
+    var v = clamp01(a.value / state.maxValue);
+    var r = R * v * e;
+    return { x: CX + Math.cos(ang(k)) * r, y: CY + Math.sin(ang(k)) * r };
+  });
+
+  ctx.beginPath();
+  pts.forEach(function(p, k){ k ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y); });
+  ctx.closePath();
+
+  var grad = ctx.createRadialGradient(CX, CY, 0, CX, CY, R);
+  grad.addColorStop(0, 'rgba(56,189,248,0.55)');
+  grad.addColorStop(1, 'rgba(167,139,250,0.25)');
+  ctx.fillStyle = grad;
+  ctx.fill();
+
+  ctx.strokeStyle = 'rgba(125,211,252,0.95)';
+  ctx.lineWidth = 3;
+  ctx.lineJoin = 'round';
+  ctx.stroke();
+
+  var dotR = n > 10 ? 5 : 6;
+  pts.forEach(function(p){
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, dotR, 0, Math.PI * 2);
+    ctx.fillStyle = '#7dd3fc';
+    ctx.shadowColor = '#38bdf8';
+    ctx.shadowBlur = 16;
+    ctx.fill();
+    ctx.shadowBlur = 0;
+  });
+
+  var labelSize = n > 8 ? 18 : 22;
+  var labelOffset = n > 8 ? 28 : 32;
+  ctx.font = '600 ' + labelSize + 'px ' + FONT;
+  ctx.textBaseline = 'middle';
+  for (var m = 0; m < n; m++) {
+    var a2 = ang(m);
+    var lx = CX + Math.cos(a2) * (R + labelOffset);
+    var ly = CY + Math.sin(a2) * (R + labelOffset);
+    var c = Math.cos(a2);
+    ctx.textAlign = Math.abs(c) < 0.25 ? 'center' : (c > 0 ? 'left' : 'right');
+    ctx.fillStyle = '#cbd5e1';
+    ctx.fillText(state.attrs[m].name, lx, ly);
+  }
+}
+
+function drawImagePanel(t){
+  var x = 430, y = 180, w = 330, h = 340;
+  var e = easeOut(clamp01(t));
+
+  rr(x, y, w, h, 20);
+  ctx.fillStyle = 'rgba(255,255,255,0.04)';
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(148,163,184,0.28)';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  if (state.rightImage) {
+    ctx.save();
+    rr(x + 8, y + 8, w - 16, h - 16, 14);
+    ctx.clip();
+    var sc = 1.06 - 0.06 * e;
+    drawCover(state.rightImage, x + 8, y + 8, w - 16, h - 16, sc, e);
+    ctx.restore();
+  } else {
+    ctx.save();
+    ctx.font = '500 22px ' + FONT;
+    ctx.fillStyle = 'rgba(148,163,184,0.5)';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('点底部「右边图」导入', x + w / 2, y + h / 2);
+    ctx.restore();
+  }
+}
+
+function drawRatingAndScore(t){
+  var e = easeOut(clamp01(t * 1.15));
+  if (e <= 0.001) return;
+
+  var right = 760;
+  var cy = 74;
+  var size = 58;
+  var r = getRating();
+
+  ctx.save();
+  ctx.globalAlpha = e;
+  var sc = 0.9 + 0.1 * e;
+  ctx.translate(right, cy);
+  ctx.scale(sc, sc);
+  ctx.translate(-right, -cy);
+
+  ctx.textAlign = 'right';
+  ctx.textBaseline = 'middle';
+  ctx.font = '800 ' + size + 'px ' + FONT;
+
+  var tw = ctx.measureText(state.rating).width;
+  var x0 = right - tw;
+
+  var grad;
+  if (r.rainbow) {
+    grad = rainbowGradient(x0, right);
+  } else {
+    grad = ctx.createLinearGradient(x0, cy - size * 0.65, right, cy + size * 0.65);
+    grad.addColorStop(0, r.a);
+    grad.addColorStop(1, r.b);
+  }
+
+  ctx.shadowColor = r.rainbow ? 'rgba(255,220,140,0.8)' : hex2rgba(r.b, 0.65);
+  ctx.shadowBlur = 26;
+  ctx.fillStyle = grad;
+  ctx.fillText(state.rating, right, cy);
+  ctx.restore();
+
+  var s = currentScore();
+  var y = 142;
+
+  var ct = clamp01(t);
+  var countE = 1 - Math.pow(1 - ct, 2.2);
+  var shown = s * countE;
+  var txt = shown.toFixed(1);
+
+  ctx.save();
+  ctx.globalAlpha = e;
+  ctx.textAlign = 'right';
+  ctx.textBaseline = 'middle';
+
+  ctx.font = '700 20px ' + FONT;
+  var wUnit = ctx.measureText('/ 10').width;
+  ctx.fillStyle = '#94a3b8';
+  ctx.fillText('/ 10', right, y + 5);
+
+  var numRight = right - wUnit - 8;
+
+  ctx.font = '800 42px ' + FONT;
+  var wNumFinal = ctx.measureText(s.toFixed(1)).width;
+
+  var cols = scoreColor(s);
+  var sg = ctx.createLinearGradient(numRight - wNumFinal, y - 22, numRight, y + 22);
+  sg.addColorStop(0, cols[0]);
+  sg.addColorStop(1, cols[1]);
+  ctx.fillStyle = sg;
+  ctx.shadowColor = hex2rgba(cols[1], 0.55);
+  ctx.shadowBlur = 18;
+  ctx.fillText(txt, numRight, y);
+  ctx.shadowBlur = 0;
+
+  ctx.font = '600 20px ' + FONT;
+  ctx.fillStyle = '#94a3b8';
+  ctx.fillText('综合', numRight - wNumFinal - 10, y);
+
+  ctx.restore();
+}
+
+function drawStats(t){
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'middle';
+  ctx.font = '700 26px ' + FONT;
+  ctx.fillStyle = '#f1f5f9';
+  ctx.fillText('属性数据', 40, 570);
+  ctx.fillStyle = '#38bdf8';
+  rr(40, 592, 60, 5, 2.5);
+  ctx.fill();
+
+  var n = state.attrs.length;
+  var rowH = rowHeightFor(n);
+  var compact = rowH < 70;
+  var nameSize = compact ? 23 : 28;
+  var valSize = compact ? 27 : 34;
+  var barH = compact ? 8 : 10;
+  var barY = compact ? 24 : 26;
+  var dotR = compact ? 7 : 8;
+  var stagger = n > 1 ? Math.min(0.08, 0.4 / (n - 1)) : 0;
+
+  state.attrs.forEach(function(a, i){
+    var baseY = 660 + i * rowH;
+    var p = easeOut(clamp01(t * 1.4 - i * stagger));
+    var val = Math.round(a.value * p);
+
+    ctx.beginPath();
+    ctx.arc(54, baseY, dotR, 0, Math.PI * 2);
+    ctx.fillStyle = a.color;
+    ctx.fill();
+
+    ctx.font = '600 ' + nameSize + 'px ' + FONT;
+    ctx.fillStyle = '#e2e8f0';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(a.name, 78, baseY);
+
+    ctx.font = '700 ' + valSize + 'px ' + FONT;
+    ctx.fillStyle = '#f8fafc';
+    ctx.textAlign = 'right';
+    ctx.fillText(String(val), 760, baseY);
+
+    rr(40, baseY + barY, 720, barH, barH / 2);
+    ctx.fillStyle = 'rgba(148,163,184,0.18)';
+    ctx.fill();
+
+    var bw = 720 * clamp01(a.value / state.maxValue) * p;
+    if (bw > 3) {
+      var g = ctx.createLinearGradient(40, 0, 760, 0);
+      g.addColorStop(0, a.color);
+      g.addColorStop(1, '#38bdf8');
+      rr(40, baseY + barY, bw, barH, barH / 2);
+      ctx.fillStyle = g;
+      ctx.fill();
+    }
+  });
+}
+
+function draw(t){
+  if (t === undefined) t = animT;
+  if (!cv.width || !cv.height) return;
+  var sx = cv.width / LOGIC_W;
+  var sy = cv.height / LOGIC_H;
+  ctx.setTransform(sx, 0, 0, sy, 0, 0);
+  ctx.clearRect(0, 0, LOGIC_W, LOGIC_H);
+  drawBackground();
+  drawTitle();
+  drawRadar(t);
+  drawImagePanel(t);
+  drawRatingAndScore(t);
+  drawStats(t);
+}
+
+function resize(){
+  updateLogicHeight();
+
+  var wrap = $('cvWrap');
+  var cssW = wrap.clientWidth || (window.innerWidth || 375) - 28;
+  if (cssW < 200) cssW = 200;
+  var cssH = cssW * (LOGIC_H / LOGIC_W);
+
+  cv.style.width = cssW + 'px';
+  cv.style.height = cssH + 'px';
+
+  var dpr = Math.min(window.devicePixelRatio || 1, 2);
+  cv.width = Math.round(cssW * dpr);
+  cv.height = Math.round(cssH * dpr);
+
+  draw();
+}
+
+function playAnimation(duration){
+  return new Promise(function(resolve){
+    var start = performance.now();
+    function frame(now){
+      var p = clamp01((now - start) / duration);
+      animT = p;
+      draw(p);
+      if (p < 1) requestAnimationFrame(frame);
+      else { animT = 1; draw(1); resolve(); }
+    }
+    requestAnimationFrame(frame);
+  });
+}
+
+function buildAttrs(){
+  var box = $('attrs');
+  box.innerHTML = '';
+  state.attrs.forEach(function(a, i){
+    var row = document.createElement('div');
+    row.className = 'attr-row';
+
+    var dot = document.createElement('div');
+    dot.className = 'dot';
+    dot.style.background = a.color;
+
+    var nameIn = document.createElement('input');
+    nameIn.className = 'name';
+    nameIn.type = 'text';
+    if (!state.longNames) nameIn.maxLength = 6;
+    nameIn.value = a.name;
+
+    var valIn = document.createElement('input');
+    valIn.className = 'val';
+    valIn.type = 'number';
+    valIn.inputMode = 'decimal';
+    if (!state.unlimitedValues) {
+      valIn.min = 0;
+      valIn.max = 100;
+    }
+    valIn.value = a.value;
+
+    nameIn.addEventListener('input', function(){
+      state.attrs[i].name = nameIn.value || '—';
+      animT = 1; draw(1);
+    });
+
+    valIn.addEventListener('input', function(){
+      var v = parseFloat(valIn.value);
+      if (isNaN(v)) v = 0;
+      if (!state.unlimitedValues) v = Math.max(0, Math.min(100, v));
+      state.attrs[i].value = v;
+      animT = 1; draw(1);
+      if (typeof scoreRefresh === 'function') scoreRefresh();
+    });
+
+    valIn.addEventListener('blur', function(){
+      valIn.value = state.attrs[i].value;
+    });
+
+    row.appendChild(dot);
+    row.appendChild(nameIn);
+    row.appendChild(valIn);
+    box.appendChild(row);
+  });
+}
+
+function isPresetCount(n){
+  return n === 5 || n === 8 || n === 12;
+}
+
+function updateCountButtons(){
+  var n = state.attrs.length;
+  var btns = document.querySelectorAll('#countRow button');
+  for (var i = 0; i < btns.length; i++) {
+    var b = btns[i];
+    var c = b.getAttribute('data-count');
+    var active = (c === 'custom') ? !isPresetCount(n) : (parseInt(c, 10) === n);
+    if (active) b.classList.add('active');
+    else b.classList.remove('active');
+  }
+}
+
+function setCount(n){
+  n = Math.round(Number(n));
+  if (isNaN(n)) { toast('请输入有效数字'); return; }
+  if (n < MIN_COUNT) n = MIN_COUNT;
+  if (n > MAX_COUNT) n = MAX_COUNT;
+
+  if (n === state.attrs.length) {
+    updateCountButtons();
+    return;
+  }
+
+  var next = [];
+  for (var i = 0; i < n; i++) {
+    if (state.attrs[i]) {
+      next.push(state.attrs[i]);
+    } else {
+      next.push({
+        name: NAME_POOL[i] || ('属性' + (i + 1)),
+        value: DEFAULT_VALUES[i] !== undefined ? DEFAULT_VALUES[i] : 60,
+        color: PALETTE[i % PALETTE.length]
+      });
+    }
+  }
+
+  state.attrs = next;
+  buildAttrs();
+  updateCountButtons();
+  if (typeof scoreRefresh === 'function') scoreRefresh();
+  resize();
+  playAnimation(animMs());
+}
+
+function initCountButtons(){
+  var row = $('countRow');
+  if (!row) return;
+  row.addEventListener('click', function(e){
+    var btn = e.target.closest ? e.target.closest('button') : null;
+    if (!btn) return;
+    var c = btn.getAttribute('data-count');
+
+    if (c === 'custom') {
+      var v = window.prompt('请输入属性数量（' + MIN_COUNT + ' ~ ' + MAX_COUNT + '）', String(state.attrs.length));
+      if (v === null) return;
+      setCount(parseInt(v, 10));
+    } else {
+      setCount(parseInt(c, 10));
+    }
+  });
+  updateCountButtons();
+}
+
+function updateRatingChips(){
+  var chips = document.querySelectorAll('#ratingRow .chip');
+  for (var i = 0; i < chips.length; i++) {
+    var chip = chips[i];
+    var key = chip.getAttribute('data-key');
+    var r = RATINGS[0];
+    for (var j = 0; j < RATINGS.length; j++) {
+      if (RATINGS[j].key === key) { r = RATINGS[j]; break; }
+    }
+    if (key === state.rating) {
+      chip.style.background = r.rainbow
+        ? RAINBOW_CSS
+        : 'linear-gradient(135deg,' + r.a + ',' + r.b + ')';
+      chip.style.color = '#fff';
+      chip.style.borderColor = 'transparent';
+      chip.style.boxShadow = '0 4px 16px ' + hex2rgba(r.b, 0.5);
+      chip.style.textShadow = '0 1px 4px rgba(0,0,0,0.35)';
+    } else {
+      chip.style.background = '';
+      chip.style.color = r.b;
+      chip.style.borderColor = hex2rgba(r.b, 0.32);
+      chip.style.boxShadow = 'none';
+      chip.style.textShadow = 'none';
+    }
+  }
+}
+
+function initRatingUI(){
+  var box = $('ratingRow');
+  if (!box) return;
+  box.innerHTML = '';
+
+  RATINGS.forEach(function(r){
+    var chip = document.createElement('button');
+    chip.type = 'button';
+    chip.className = 'chip';
+    chip.textContent = r.key;
+    chip.setAttribute('data-key', r.key);
+
+    chip.addEventListener('click', function(){
+      state.rating = r.key;
+      updateRatingChips();
+      animT = 1; draw(1);
+
+      var target = chip.offsetLeft - (box.clientWidth - chip.offsetWidth) / 2;
+      if (box.scrollTo) box.scrollTo({ left: Math.max(0, target), behavior: 'smooth' });
+      else box.scrollLeft = Math.max(0, target);
+    });
+
+    box.appendChild(chip);
+  });
+
+  updateRatingChips();
+}
+
+function initScoreUI(){
+  var input = $('scoreInput');
+  var hint = $('scoreHint');
+  var seg = $('scoreMode');
+  if (!input || !hint || !seg) return;
+
+  function refresh(){
+    var auto = state.scoreMode === 'auto';
+    if (auto) {
+      input.value = autoScore().toFixed(1);
+      input.readOnly = true;
+      input.classList.add('ro');
+      hint.textContent = state.formula === 'f*m'
+        ? '按所有属性平均值自动计算（满分 10 分）'
+        : '公式：' + state.formula;
+    } else {
+      input.value = Number(state.manualScore).toFixed(1);
+      input.readOnly = false;
+      input.classList.remove('ro');
+      hint.textContent = '手动填写 0 ~ 10 分';
+    }
+    var btns = seg.querySelectorAll('button');
+    for (var i = 0; i < btns.length; i++) {
+      btns[i].classList.toggle('active', btns[i].getAttribute('data-mode') === state.scoreMode);
+    }
+  }
+
+  seg.addEventListener('click', function(e){
+    var b = e.target.closest ? e.target.closest('button') : null;
+    if (!b) return;
+    var mode = b.getAttribute('data-mode');
+    if (mode === state.scoreMode) return;
+
+    if (mode === 'manual') {
+      var v = parseFloat(input.value);
+      if (!isNaN(v)) state.manualScore = Math.max(0, Math.min(10, v));
+    }
+    state.scoreMode = mode;
+    refresh();
+    animT = 1; draw(1);
+  });
+
+  input.addEventListener('input', function(){
+    if (state.scoreMode === 'auto') return;
+    var v = parseFloat(input.value);
+    if (isNaN(v)) v = 0;
+    state.manualScore = state.devMode ? v : Math.max(0, Math.min(10, v));
+    animT = 1; draw(1);
+  });
+
+  input.addEventListener('blur', function(){
+    if (state.scoreMode === 'auto') return;
+    input.value = Number(state.manualScore).toFixed(1);
+  });
+
+  scoreRefresh = refresh;
+  refresh();
+}
+
+function initTitle(){
+  var ti = $('titleInput');
+  if (!ti) return;
+  ti.value = state.title;
+  ti.addEventListener('input', function(){
+    state.title = ti.value || '雷达图';
+    animT = 1; draw(1);
+  });
+}
+
+function loadImageFile(file, cb){
+  var reader = new FileReader();
+  reader.onload = function(ev){
+    var img = new Image();
+    img.onload = function(){ cb(img); };
+    img.onerror = function(){ toast('图片加载失败'); };
+    img.src = ev.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function initImageInputs(){
+  var bgFile = $('bgFile');
+  if (bgFile) {
+    bgFile.addEventListener('change', function(e){
+      var f = e.target.files[0];
+      if (!f) return;
+      loadImageFile(f, function(img){
+        state.bgImage = img;
+        animT = 1; draw(1);
+        toast('背景图已导入');
+      });
+      e.target.value = '';
+    });
+  }
+
+  var imgFile = $('imgFile');
+  if (imgFile) {
+    imgFile.addEventListener('change', function(e){
+      var f = e.target.files[0];
+      if (!f) return;
+      loadImageFile(f, function(img){
+        state.rightImage = img;
+        animT = 1; draw(1);
+        toast('右边图已导入');
+      });
+      e.target.value = '';
+    });
+  }
+}
+
+function initDurationUI(){
+  var chk = $('durEnable');
+  var inp = $('durInput');
+  var lab = $('durChk');
+  if (!chk || !inp || !lab) return;
+
+  inp.value = String(state.duration);
+
+  function sync(){
+    inp.disabled = !state.customDur;
+    if (state.customDur) lab.classList.add('on');
+    else lab.classList.remove('on');
+  }
+
+  chk.addEventListener('change', function(){
+    state.customDur = !!chk.checked;
+    sync();
+    if (state.customDur) {
+      setTimeout(function(){
+        try { inp.focus(); inp.select && inp.select(); } catch (err) {}
+      }, 30);
+    }
+  });
+
+  inp.addEventListener('input', function(){
+    var v = parseFloat(inp.value);
+    if (!isNaN(v) && v > 0) state.duration = Math.min(MAX_DUR_SEC, v);
+  });
+
+  inp.addEventListener('blur', function(){
+    var v = parseFloat(inp.value);
+    if (isNaN(v) || v <= 0) v = 1;
+    v = Math.max(MIN_DUR_SEC, Math.min(MAX_DUR_SEC, v));
+    state.duration = v;
+    inp.value = String(v);
+  });
+
+  sync();
+}
+
+function download(url, filename){
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  if (url.indexOf('blob:') === 0) {
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 8000);
+  }
+}
+
+function initExportImage(){
+  var btn = $('exportImg');
+  if (!btn) return;
+  btn.addEventListener('click', function(){
+    animT = 1; draw(1);
+    try {
+      var fmt = state.imgFormat || 'png';
+      var url = fmt === 'png' ? cv.toDataURL('image/png') : cv.toDataURL('image/' + fmt, 0.92);
+      var ext = fmt === 'jpeg' ? 'jpg' : fmt;
+      download(url, 'radar-' + Date.now() + '.' + ext);
+      toast('图片已保存');
+    } catch (err) {
+      toast('导出失败');
+    }
+  });
+}
+
+function initExportVideo(){
+  var btn = $('exportVid');
+  if (!btn) return;
+  btn.addEventListener('click', function(){
+    if (recording) return;
+    if (typeof MediaRecorder === 'undefined' || !cv.captureStream) {
+      toast('当前浏览器不支持视频导出');
+      return;
+    }
+
+    recording = true;
+    var origText = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = '录制中…';
+
+    (async function(){
+      try {
+        var dur = animMs();
+        animT = 0; draw(0);
+
+        var stream = cv.captureStream(30);
+        var preferMp4 = state.vidFormat === 'mp4';
+        var types = preferMp4
+          ? ['video/mp4', 'video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm']
+          : ['video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm', 'video/mp4'];
+        var mime = '';
+        for (var i = 0; i < types.length; i++) {
+          if (MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(types[i])) {
+            mime = types[i];
+            break;
+          }
+        }
+
+        var options = mime ? { mimeType: mime, videoBitsPerSecond: 6000000 } : undefined;
+        var rec = new MediaRecorder(stream, options);
+        var chunks = [];
+
+        rec.ondataavailable = function(e){
+          if (e.data && e.data.size > 0) chunks.push(e.data);
+        };
+
+        var stopped = new Promise(function(res){ rec.onstop = res; });
+
+        rec.start(100);
+        await playAnimation(dur);
+        await new Promise(function(r){
+          setTimeout(r, Math.max(300, Math.min(900, dur * 0.3)));
+        });
+        rec.stop();
+        await stopped;
+
+        var isMp4 = mime.indexOf('mp4') !== -1;
+        var blob = new Blob(chunks, { type: isMp4 ? 'video/mp4' : 'video/webm' });
+        download(URL.createObjectURL(blob), 'radar-' + Date.now() + (isMp4 ? '.mp4' : '.webm'));
+        toast('视频已保存');
+      } catch (err) {
+        console.error(err);
+        toast('录制失败：' + err.message);
+      } finally {
+        recording = false;
+        btn.disabled = false;
+        btn.textContent = origText;
+        animT = 1; draw(1);
+      }
+    })();
+  });
+}
+
+function initPreview(){
+  var btn = $('previewBtn');
+  if (!btn) return;
+  btn.addEventListener('click', function(){
+    if (recording) return;
+    playAnimation(animMs()).then(function(){
+      animT = 1; draw(1);
+    });
+  });
+}
+
+function applyNight(){
+  if (state.night) document.body.classList.remove('light');
+  else document.body.classList.add('light');
+  var sw = $('nightSw');
+  if (sw) sw.classList.toggle('on', state.night);
+  try { localStorage.setItem(NIGHT_KEY, state.night ? '1' : '0'); } catch (e) {}
+}
+
+function initDrawer(){
+  var drawer = $('drawer');
+  var mask = $('drawerMask');
+  var tab = $('drawerTab');
+  if (!drawer) return;
+
+  function openDrawer(){
+    drawer.classList.add('open');
+    if (mask) mask.classList.add('show');
+  }
+  function closeDrawer(){
+    drawer.classList.remove('open');
+    if (mask) mask.classList.remove('show');
+  }
+
+  if (tab) tab.addEventListener('click', openDrawer);
+  if (mask) mask.addEventListener('click', closeDrawer);
+
+  var sx = 0, sy = 0, tracking = false;
+  document.addEventListener('touchstart', function(e){
+    if (!e.touches || !e.touches.length) return;
+    sx = e.touches[0].clientX;
+    sy = e.touches[0].clientY;
+    tracking = sx < 26 && !drawer.classList.contains('open');
+  }, { passive: true });
+
+  document.addEventListener('touchmove', function(e){
+    if (!tracking || !e.touches || !e.touches.length) return;
+    var dx = e.touches[0].clientX - sx;
+    var dy = Math.abs(e.touches[0].clientY - sy);
+    if (dx > 50 && dy < 60) {
+      tracking = false;
+      openDrawer();
+    }
+  }, { passive: true });
+
+  document.addEventListener('touchend', function(){ tracking = false; }, { passive: true });
+
+  var nightBtn = $('nightBtn');
+  if (nightBtn) {
+    nightBtn.addEventListener('click', function(){
+      state.night = !state.night;
+      applyNight();
+      toast(state.night ? '夜间模式已开启' : '夜间模式已关闭');
+    });
+  }
+
+  var settingsBtn = $('settingsBtn');
+  if (settingsBtn) {
+    settingsBtn.addEventListener('click', function(){
+      closeDrawer();
+      var page = $('settingsPage');
+      if (page) page.classList.add('open');
+    });
+  }
+}
+
+function checkUpdate(){
+  var btn = $('checkUpdate');
+  if (!btn) return;
+  if (btn.disabled) return;
+
+  var oldText = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = '检查中…';
+
+  fetch(GITHUB_API, {
+    headers: { 'Accept': 'application/vnd.github.v3+json' },
+    cache: 'no-store'
+  })
+  .then(function(r){
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    return r.json();
+  })
+  .then(function(data){
+    var remoteVer = String(data.tag_name || '').replace(/^v/i, '').trim();
+    if (!remoteVer) throw new Error('no version');
+
+    if (remoteVer !== APP_VERSION) {
+      toast('检测到更新 v' + remoteVer);
+    } else {
+      toast('已是最新版本 v' + APP_VERSION);
+    }
+  })
+  .catch(function(err){
+    console.error('[checkUpdate]', err);
+    toast('检查更新失败，请稍后重试');
+  })
+  .finally(function(){
+    btn.disabled = false;
+    btn.textContent = oldText;
+  });
+}
+
+function initSettings(){
+  var back = $('settingsBack');
+  if (back) {
+    back.addEventListener('click', function(){
+      var page = $('settingsPage');
+      if (page) page.classList.remove('open');
+    });
+  }
+
+  var sv = $('setVer');
+  if (sv) sv.textContent = APP_VERSION;
+  var dv = $('drawerVer');
+  if (dv) dv.textContent = 'v' + APP_VERSION;
+
+  var cu = $('checkUpdate');
+  if (cu) cu.addEventListener('click', checkUpdate);
+
+  function bindSeg(id, key){
+    var seg = $(id);
+    if (!seg) return;
+    var btns = seg.querySelectorAll('button');
+    for (var i = 0; i < btns.length; i++) {
+      if (btns[i].getAttribute('data-v') === state[key]) btns[i].classList.add('active');
+      else btns[i].classList.remove('active');
+    }
+    seg.addEventListener('click', function(e){
+      var b = e.target.closest ? e.target.closest('button') : null;
+      if (!b) return;
+      state[key] = b.getAttribute('data-v');
+      var all = seg.querySelectorAll('button');
+      for (var j = 0; j < all.length; j++) all[j].classList.toggle('active', all[j] === b);
+      toast('已切换为 ' + b.textContent.trim());
+    });
+  }
+
+  bindSeg('imgFmtSeg', 'imgFormat');
+  bindSeg('vidFmtSeg', 'vidFormat');
+
+  var devBtn = $('devBtn');
+  if (devBtn) {
+    devBtn.addEventListener('click', function(){
+      if (state.devMode) {
+        var page = $('settingsPage');
+        if (page) page.classList.remove('open');
+        openDevPanel();
+        return;
+      }
+      openPwdModal();
+    });
+  }
+}
+
+function loadPassword(){
+  return fetch('mm.txt', { cache: 'no-store' })
+    .then(function(r){
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return r.text();
+    })
+    .then(function(t){
+      devPassword = t.replace(/^\uFEFF/, '').trim();
+      devPasswordTried = true;
+      return devPassword;
+    })
+    .catch(function(){
+      devPassword = null;
+      devPasswordTried = true;
+      return null;
+    });
+}
+
+function openPwdModal(){
+  var err = $('pwdErr');
+  var inp = $('pwdInput');
+  var mask = $('pwdMask');
+  if (err) err.textContent = '';
+  if (inp) inp.value = '';
+  if (mask) mask.classList.add('show');
+  setTimeout(function(){ if (inp) inp.focus(); }, 50);
+  if (!devPasswordTried) loadPassword();
+}
+
+function closePwdModal(){
+  var mask = $('pwdMask');
+  if (mask) mask.classList.remove('show');
+}
+
+function initPwdModal(){
+  var cancel = $('pwdCancel');
+  if (cancel) cancel.addEventListener('click', closePwdModal);
+
+  var ok = $('pwdOk');
+  if (ok) {
+    ok.addEventListener('click', function(){
+      var val = $('pwdInput').value.trim();
+      if (!val) { $('pwdErr').textContent = '请输入密码'; return; }
+
+      function check(){
+        if (devPassword === null) {
+          $('pwdErr').textContent = '无法读取 mm.txt，请确认文件存在';
+          return;
+        }
+        if (val === devPassword) {
+          closePwdModal();
+          state.devMode = true;
+          var db = $('devBtn');
+          if (db) { db.classList.add('on'); db.textContent = '开发者模式（已开启）'; }
+          buildAttrs();
+          if (typeof scoreRefresh === 'function') scoreRefresh();
+          var page = $('settingsPage');
+          if (page) page.classList.remove('open');
+          animT = 1; draw(1);
+          toast('开发者模式已开启');
+          setTimeout(openDevPanel, 260);
+        } else {
+          $('pwdErr').textContent = '密码错误';
+        }
+      }
+
+      if (!devPasswordTried) loadPassword().then(check);
+      else check();
+    });
+  }
+
+  var pi = $('pwdInput');
+  if (pi) {
+    pi.addEventListener('keydown', function(e){
+      if (e.key === 'Enter' && ok) ok.click();
+    });
+  }
+}
+
+var DEV_CSS = [
+'.dv-root{position:absolute;top:0;right:0;bottom:0;left:0;display:flex;flex-direction:column;background:#0d1424;color:#e2e8f0;',
+'font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;font-size:14px;}',
+'.dv-head{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1px solid #1e2b45;flex:none;}',
+'.dv-title{font-size:15px;font-weight:800;color:#f1f5f9;}',
+'.dv-head-r{display:flex;align-items:center;gap:8px;}',
+'.dv-help{width:30px;height:30px;border-radius:50%;border:1px solid #1e2b45;background:#131d33;color:#38bdf8;font-weight:800;font-size:15px;cursor:pointer;font-family:inherit;}',
+'.dv-close{width:30px;height:30px;border-radius:9px;border:1px solid #1e2b45;background:#131d33;color:#94a3b8;font-size:16px;cursor:pointer;font-family:inherit;}',
+'.dv-tabs{display:flex;gap:6px;padding:10px 14px;flex:none;overflow-x:auto;border-bottom:1px solid #1e2b45;scrollbar-width:none;}',
+'.dv-tabs::-webkit-scrollbar{display:none;}',
+'.dv-tabs button{flex:none;padding:8px 14px;border-radius:9px;border:1px solid #1e2b45;background:#0a1120;color:#94a3b8;font-size:13px;font-weight:700;font-family:inherit;cursor:pointer;}',
+'.dv-tabs button.active{background:linear-gradient(135deg,#0ea5e9,#6366f1);border-color:transparent;color:#fff;}',
+'.dv-body{flex:1;overflow-y:auto;padding:14px;position:relative;}',
+'.dv-row{margin-bottom:14px;}',
+'.dv-row>label{display:block;font-size:12.5px;color:#94a3b8;font-weight:600;margin-bottom:7px;}',
+'.dv-row input[type=text],.dv-row input[type=number]{width:100%;padding:11px 12px;border-radius:10px;border:1px solid #1e2b45;background:#0a1120;color:#38bdf8;font-size:15px;font-family:inherit;outline:none;font-weight:700;-moz-appearance:textfield;}',
+'.dv-row input:focus{border-color:#38bdf8;}',
+'.dv-btn{width:100%;padding:12px;border-radius:11px;border:1px solid #1e2b45;background:#131d33;color:#e2e8f0;font-size:14px;font-weight:700;font-family:inherit;cursor:pointer;}',
+'.dv-btn.pri{background:linear-gradient(135deg,#0ea5e9,#6366f1);border-color:transparent;color:#fff;}',
+'.dv-sw{display:flex;align-items:center;justify-content:space-between;padding:11px 12px;border-radius:10px;border:1px solid #1e2b45;background:#0a1120;margin-bottom:10px;font-size:13.5px;font-weight:600;color:#cbd5e1;}',
+'.dv-sw input{width:18px;height:18px;accent-color:#0ea5e9;}',
+'.dv-rate{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:10px;border:1px solid #1e2b45;background:#0a1120;margin-bottom:8px;}',
+'.dv-rate input{flex:1;min-width:0;background:transparent;border:0;color:#e2e8f0;font-size:14px;font-weight:700;outline:none;font-family:inherit;}',
+'.dv-rate .del{width:28px;height:28px;border-radius:8px;border:1px solid rgba(248,113,113,.4);background:transparent;color:#f87171;font-size:15px;cursor:pointer;font-family:inherit;flex:none;}',
+'.dv-note{font-size:12px;color:#64748b;line-height:1.7;margin-top:8px;}',
+'.dv-out{margin-top:10px;padding:10px 12px;border-radius:10px;background:#0a1120;border:1px solid #1e2b45;color:#4ade80;font-size:13px;font-weight:700;word-break:break-all;}',
+'.dv-help-layer{position:absolute;top:0;right:0;bottom:0;left:0;background:#0d1424;z-index:5;overflow-y:auto;padding:14px;display:none;}',
+'.dv-help-layer.show{display:block;}',
+'.dv-letter{display:flex;gap:10px;padding:8px 0;border-bottom:1px solid rgba(30,43,69,.7);font-size:13px;}',
+'.dv-letter b{color:#38bdf8;width:24px;flex:none;font-weight:800;}',
+'.dv-letter span{color:#cbd5e1;}',
+'.dv-h-title{font-size:15px;font-weight:800;color:#f1f5f9;margin-bottom:10px;}'
+].join('');
+
+function devPanelHTML(isPip){
+  var letters = LETTERS.map(function(l){
+    return '<div class="dv-letter"><b>' + l[0] + '</b><span>' + l[1] + '</span></div>';
+  }).join('');
+
+  var rates = RATINGS.map(function(r, i){
+    return '<div class="dv-rate" data-idx="' + i + '">' +
+      '<input type="text" value="' + r.key.replace(/"/g, '&quot;') + '">' +
+      '<button class="del">×</button></div>';
+  }).join('');
+
+  return '' +
+  '<div class="dv-head">' +
+    '<span class="dv-title">开发者模式</span>' +
+    '<div class="dv-head-r">' +
+      '<button class="dv-help">?</button>' +
+      (isPip ? '' : '<button class="dv-close">×</button>') +
+    '</div>' +
+  '</div>' +
+  '<div class="dv-tabs">' +
+    '<button data-tab="num" class="active">数值</button>' +
+    '<button data-tab="formula">评分公式</button>' +
+    '<button data-tab="rating">评级管理</button>' +
+  '</div>' +
+  '<div class="dv-body">' +
+    '<div class="dv-pane" data-pane="num">' +
+      '<div class="dv-sw"><span>允许负数</span><input type="checkbox" data-k="unlimitedValues" ' + (state.unlimitedValues ? 'checked' : '') + '></div>' +
+      '<div class="dv-note" style="margin-top:-4px;margin-bottom:12px;">开启后属性数值可为负数，也可超过满值。</div>' +
+      '<div class="dv-sw"><span>属性名称不限长度</span><input type="checkbox" data-k="longNames" ' + (state.longNames ? 'checked' : '') + '></div>' +
+      '<div class="dv-row" style="margin-top:14px;">' +
+        '<label>属性满值（上限）</label>' +
+        '<input type="number" data-k="maxValue" value="' + state.maxValue + '">' +
+      '</div>' +
+      '<div class="dv-note">修改后雷达图与公式中的 e 会同步变化。</div>' +
+    '</div>' +
+    '<div class="dv-pane" data-pane="formula" style="display:none;">' +
+      '<div class="dv-row">' +
+        '<label>综合评分公式</label>' +
+        '<input type="text" data-k="formula" value="' + String(state.formula).replace(/"/g, '&quot;') + '">' +
+      '</div>' +
+      '<div class="dv-out" data-out="formula">= —</div>' +
+      '<div class="dv-note">例如：x*4 表示「所有属性数值之和 × 4」。<br>支持 + - * / % ^ 与括号，支持 sqrt/abs/min/max/round/floor/ceil/pow。<br>点击右上角 ? 查看全部 26 个字母的含义。</div>' +
+      '<div style="margin-top:12px;"><button class="dv-btn pri" data-act="applyFormula">应用公式</button></div>' +
+      '<div style="margin-top:10px;"><button class="dv-btn" data-act="resetFormula">恢复默认（f*m）</button></div>' +
+    '</div>' +
+    '<div class="dv-pane" data-pane="rating" style="display:none;">' +
+      '<div class="dv-note" style="margin-bottom:12px;">可修改评级名称，也可删除或新增评级。</div>' +
+      '<div data-list="rating">' + rates + '</div>' +
+      '<div style="margin-top:12px;"><button class="dv-btn pri" data-act="addRating">新增评级</button></div>' +
+    '</div>' +
+    '<div class="dv-help-layer">' +
+      '<div class="dv-h-title">公式字母说明（26 个）</div>' +
+      letters +
+      '<div class="dv-note" style="margin-top:14px;">y 为最终结果，也就是综合评分。写公式时可直接写 y = 表达式，等号左边部分会被自动使用。</div>' +
+      '<div style="margin-top:16px;"><button class="dv-btn" data-act="closeHelp">返回</button></div>' +
+    '</div>' +
+  '</div>';
+}
+
+function buildDevPanel(doc, root, isPip){
+  root.innerHTML = devPanelHTML(isPip);
+
+  function q(sel){ return root.querySelector(sel); }
+  function qa(sel){ return Array.prototype.slice.call(root.querySelectorAll(sel)); }
+
+  function refreshOut(){
+    var out = q('[data-out="formula"]');
+    if (!out) return;
+    var r = evalFormula(state.formula, formulaVars());
+    out.textContent = '= ' + (isNaN(r) ? '—' : (Math.round(r * 1000) / 1000));
+  }
+
+  qa('.dv-tabs button').forEach(function(b){
+    b.addEventListener('click', function(){
+      qa('.dv-tabs button').forEach(function(x){ x.classList.remove('active'); });
+      b.classList.add('active');
+      var tab = b.getAttribute('data-tab');
+      qa('.dv-pane').forEach(function(p){
+        p.style.display = p.getAttribute('data-pane') === tab ? '' : 'none';
+      });
+      if (tab === 'formula') refreshOut();
+    });
+  });
+
+  var helpBtn = q('.dv-help');
+  if (helpBtn) {
+    helpBtn.addEventListener('click', function(){
+      q('.dv-help-layer').classList.toggle('show');
+    });
+  }
+
+  var closeBtn = q('.dv-close');
+  if (closeBtn) {
+    closeBtn.addEventListener('click', function(){
+      closeDevPanel();
+    });
+  }
+
+  qa('input[data-k]').forEach(function(inp){
+    var k = inp.getAttribute('data-k');
+    if (inp.type === 'checkbox') {
+      inp.addEventListener('change', function(){
+        state[k] = inp.checked;
+        if (k === 'unlimitedValues' || k === 'longNames') buildAttrs();
+        if (typeof scoreRefresh === 'function') scoreRefresh();
+        animT = 1; draw(1);
+      });
+    } else if (inp.type === 'number') {
+      inp.addEventListener('input', function(){
+        var v = parseFloat(inp.value);
+        if (isNaN(v)) return;
+        state[k] = v;
+        if (typeof scoreRefresh === 'function') scoreRefresh();
+        animT = 1; draw(1);
+      });
+    } else {
+      inp.addEventListener('input', function(){
+        state[k] = inp.value;
+      });
+    }
+  });
+
+  qa('[data-act]').forEach(function(b){
+    b.addEventListener('click', function(){
+      var act = b.getAttribute('data-act');
+
+      if (act === 'applyFormula') {
+        if (typeof scoreRefresh === 'function') scoreRefresh();
+        animT = 1; draw(1);
+        refreshOut();
+        toast('公式已应用');
+      } else if (act === 'resetFormula') {
+        state.formula = 'f*m';
+        var fi = q('[data-k="formula"]');
+        if (fi) fi.value = 'f*m';
+        if (typeof scoreRefresh === 'function') scoreRefresh();
+        animT = 1; draw(1);
+        refreshOut();
+        toast('已恢复默认公式');
+      } else if (act === 'closeHelp') {
+        q('.dv-help-layer').classList.remove('show');
+      } else if (act === 'addRating') {
+        RATINGS.push({ key: '新评级', a: '#94a3b8', b: '#64748b' });
+        refreshRatingList();
+        initRatingUI();
+        updateRatingChips();
+        animT = 1; draw(1);
+      }
+    });
+  });
+
+  function refreshRatingList(){
+    var list = q('[data-list="rating"]');
+    if (!list) return;
+    list.innerHTML = RATINGS.map(function(r, i){
+      return '<div class="dv-rate" data-idx="' + i + '">' +
+        '<input type="text" value="' + r.key.replace(/"/g, '&quot;') + '">' +
+        '<button class="del">×</button></div>';
+    }).join('');
+    bindRatingList();
+  }
+
+  function bindRatingList(){
+    qa('.dv-rate').forEach(function(row){
+      var idx = parseInt(row.getAttribute('data-idx'), 10);
+      var inp = row.querySelector('input');
+      var del = row.querySelector('.del');
+
+      inp.addEventListener('input', function(){
+        RATINGS[idx].key = inp.value || '—';
+        if (state.rating === RATINGS[idx].key || !state.rating) {
+          state.rating = inp.value || '—';
+        }
+        updateRatingChips();
+        initRatingUI();
+        animT = 1; draw(1);
+      });
+
+      del.addEventListener('click', function(){
+        if (RATINGS.length <= 1) { toast('至少保留一个评级'); return; }
+        var removed = RATINGS.splice(idx, 1)[0];
+        if (removed.key === state.rating) {
+          state.rating = RATINGS[0].key;
+        }
+        refreshRatingList();
+        initRatingUI();
+        updateRatingChips();
+        if (typeof scoreRefresh === 'function') scoreRefresh();
+        animT = 1; draw(1);
+      });
+    });
+  }
+
+  bindRatingList();
+  refreshOut();
+}
+
+function openDevPanel(){
+  if (typeof documentPictureInPicture !== 'undefined' && documentPictureInPicture.requestWindow) {
+    documentPictureInPicture.requestWindow({ width: 380, height: 640 })
+      .then(function(win){
+        var d = win.document;
+        d.body.style.margin = '0';
+        d.body.style.background = '#0d1424';
+        d.body.style.overflow = 'hidden';
+        var st = d.createElement('style');
+        st.textContent = DEV_CSS;
+        d.head.appendChild(st);
+        var root = d.createElement('div');
+        root.className = 'dv-root';
+        d.body.appendChild(root);
+        buildDevPanel(d, root, true);
+      })
+      .catch(function(){
+        mountDevModal();
+      });
+  } else {
+    mountDevModal();
+  }
+}
+
+function mountDevModal(){
+  var mask = $('devMask');
+  if (mask) mask.classList.add('show');
+  var root = $('devRoot');
+  if (!root) return;
+  root.className = 'dv-root';
+  var oldStyle = document.getElementById('devStyle');
+  if (!oldStyle) {
+    var st = document.createElement('style');
+    st.id = 'devStyle';
+    st.textContent = DEV_CSS;
+    document.head.appendChild(st);
+  }
+  buildDevPanel(document, root, false);
+}
+
+function closeDevPanel(){
+  var mask = $('devMask');
+  if (mask) mask.classList.remove('show');
+  var root = $('devRoot');
+  if (root) root.innerHTML = '';
+}
+
+function initAnnounce(){
+  var seen = null;
+  try { seen = localStorage.getItem(ANNOUNCE_KEY); } catch (e) {}
+  if (seen === APP_VERSION) return;
+
+  var mask = $('announceMask');
+  if (!mask) return;
+
+  setTimeout(function(){
+    mask.classList.add('show');
+  }, 320);
+
+  var ok = $('announceOk');
+  if (ok) {
+    ok.addEventListener('click', function(){
+      mask.classList.remove('show');
+      try { localStorage.setItem(ANNOUNCE_KEY, APP_VERSION); } catch (e) {}
+    });
+  }
+}
+
+function initSiteBar(){
+  var bar = $('siteBar');
+  if (!bar) return;
+
+  setTimeout(function(){
+    bar.classList.add('show');
+  }, 700);
+
+  var timer = setTimeout(function(){
+    bar.classList.remove('show');
+  }, 6700);
+
+  var close = $('siteBarClose');
+  if (close) {
+    close.addEventListener('click', function(){
+      clearTimeout(timer);
+      bar.classList.remove('show');
+    });
+  }
+}
+
+function initNight(){
+  var saved = null;
+  try { saved = localStorage.getItem(NIGHT_KEY); } catch (e) {}
+  state.night = saved === null ? true : saved === '1';
+  applyNight();
+}
+
+function safeCall(fn, name){
+  try { fn(); }
+  catch (e) { console.error('[init:' + name + ']', e); }
+}
+
+function init(){
+  safeCall(initNight, 'night');
+  safeCall(initTitle, 'title');
+  safeCall(buildAttrs, 'attrs');
+  safeCall(initCountButtons, 'count');
+  safeCall(initImageInputs, 'image');
+  safeCall(initRatingUI, 'rating');
+  safeCall(initScoreUI, 'score');
+  safeCall(initDurationUI, 'duration');
+  safeCall(initExportImage, 'exportImg');
+  safeCall(initExportVideo, 'exportVid');
+  safeCall(initPreview, 'preview');
+  safeCall(initDrawer, 'drawer');
+  safeCall(initSettings, 'settings');
+  safeCall(initPwdModal, 'pwd');
+  safeCall(initAnnounce, 'announce');
+  safeCall(initSiteBar, 'siteBar');
+
+  loadPassword();
+
+  requestAnimationFrame(function(){
+    resize();
+    setTimeout(resize, 100);
+  });
+
+  window.addEventListener('resize', resize);
+  window.addEventListener('orientationchange', function(){
+    setTimeout(resize, 200);
+  });
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', init);
+} else {
+  init();
+}
+
+})();
+</script>
+</body>
+</html>
